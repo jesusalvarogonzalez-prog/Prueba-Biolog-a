@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reto: Dinámica de la Tierra</title>
+    <!-- Tailwind CSS para diseño moderno -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Fuentes e Iconos -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300;400;600&family=Nunito:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Librería para el Diploma (PDF) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.css"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- Librería para Fuegos Artificiales -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Nunito', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #2d3748;
+            user-select: none; /* Dificulta copiar texto */
+        }
+        h1, h2, h3 {
+            font-family: 'Fredoka', sans-serif;
+        }
+        .btn-option {
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .btn-option:active {
+            transform: scale(0.98);
+        }
+        /* Animación de entrada */
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Barra de tiempo */
+        .timer-bar {
+            transition: width 1s linear;
+        }
+
+        /* Estilo para el modal de feedback */
+        .modal-overlay {
+            background-color: rgba(0,0,0,0.85);
+            backdrop-filter: blur(5px);
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center p-4">
+
+    <!-- CONTENEDOR PRINCIPAL -->
+    <div id="app-container" class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl overflow-hidden relative min-h-[600px] flex flex-col">
+        
+        <!-- PANTALLA 1: PORTADA -->
+        <div id="screen-welcome" class="flex flex-col items-center justify-center flex-grow p-8 text-center fade-in">
+            <div class="mb-6 text-purple-600">
+                <i class="fa-solid fa-earth-americas text-6xl animate-bounce"></i>
+            </div>
+            <h2 class="text-xl text-gray-500 font-bold mb-2">Sagrado Corazón Hermanas Carmelitas</h2>
+            <h1 class="text-4xl md:text-5xl font-bold text-gray-800 mb-4">RETO: DINÁMICA DE LA TIERRA</h1>
+            <p class="text-lg text-gray-600 mb-8 max-w-md">
+                Demuestra tus conocimientos sobre Tectónica de Placas y Dinámica Terrestre. 
+                <br><span class="font-bold text-purple-600 text-xl block mt-2">Objetivo: >84%</span>
+            </p>
+            
+            <div class="w-full max-w-sm">
+                <label class="block text-left text-gray-700 font-bold mb-2 ml-1">Introduce tu nombre:</label>
+                <input type="text" id="username" class="w-full px-4 py-3 rounded-lg border-2 border-purple-300 focus:border-purple-600 focus:outline-none transition text-lg mb-4" placeholder="Nombre y Apellidos">
+                <button onclick="startQuiz()" class="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold py-3 px-6 rounded-lg shadow-lg transform transition hover:-translate-y-1 hover:shadow-xl text-xl">
+                    ¡EMPEZAR RETO!
+                </button>
+            </div>
+            <p class="text-xs text-gray-400 mt-6"><i class="fa-solid fa-lock"></i> Sistema anti-copia activado. No salgas de la pantalla.</p>
+        </div>
+
+        <!-- PANTALLA 2: PREGUNTAS -->
+        <div id="screen-quiz" class="hidden flex-col h-full fade-in relative">
+            <!-- Header -->
+            <div class="bg-gray-100 p-4 flex justify-between items-center border-b">
+                <div class="text-gray-700 font-bold"><i class="fa-solid fa-user-graduate mr-2"></i><span id="display-name">Alumno</span></div>
+                <div class="text-purple-600 font-bold text-xl">Pregunta <span id="q-current">1</span>/25</div>
+            </div>
+            
+            <!-- Barra de tiempo -->
+            <div class="w-full bg-gray-200 h-2">
+                <div id="timer-bar" class="bg-red-500 h-2 w-full timer-bar"></div>
+            </div>
+
+            <!-- Pregunta -->
+            <div class="flex-grow flex flex-col justify-center p-6 md:p-10">
+                <div class="text-center mb-8">
+                    <span id="timer-text" class="inline-block bg-red-100 text-red-600 font-bold px-3 py-1 rounded-full mb-4 text-sm animate-pulse">20s</span>
+                    <h2 id="question-text" class="text-2xl md:text-3xl font-bold text-gray-800 leading-tight">
+                        <!-- Aquí va la pregunta -->
+                    </h2>
+                </div>
+
+                <!-- Opciones (Grid 2x2) -->
+                <div id="options-container" class="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
+                    <!-- Botones generados por JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- PANTALLA 3: RESULTADOS -->
+        <div id="screen-results" class="hidden flex-col items-center justify-center flex-grow p-8 text-center fade-in h-full">
+            <div id="result-icon" class="mb-4 text-6xl"></div>
+            <h1 id="result-title" class="text-4xl font-bold mb-2"></h1>
+            <p id="result-message" class="text-xl text-gray-600 mb-6"></p>
+            
+            <div class="bg-gray-100 rounded-xl p-6 mb-8 w-full max-w-md">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-gray-600">Aciertos:</span>
+                    <span id="score-text" class="font-bold text-2xl">0/25</span>
+                </div>
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-gray-600">Porcentaje:</span>
+                    <span id="percentage-text" class="font-bold text-2xl">0%</span>
+                </div>
+                <div class="flex justify-between items-center pt-2 border-t border-gray-300">
+                    <span class="text-gray-600">Nota final:</span>
+                    <span id="grade-text" class="font-bold text-3xl text-purple-600">0</span>
+                </div>
+            </div>
+
+            <div class="flex flex-col gap-3 w-full max-w-xs">
+                <button id="btn-download" onclick="generateDiploma()" class="hidden bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition flex items-center justify-center">
+                    <i class="fa-solid fa-file-pdf mr-2"></i> Descargar Diploma
+                </button>
+                <button onclick="location.reload()" class="bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition">
+                    <i class="fa-solid fa-rotate-right mr-2"></i> Intentar de nuevo
+                </button>
+            </div>
+        </div>
+
+        <!-- MODAL DE FEEDBACK (CORRECTO/INCORRECTO) -->
+        <div id="feedback-modal" class="fixed inset-0 modal-overlay hidden z-50 flex items-center justify-center p-4">
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg p-6 text-center transform transition-all scale-100">
+                <div id="fb-icon" class="text-5xl mb-4"></div>
+                <h3 id="fb-title" class="text-2xl font-bold mb-2"></h3>
+                <p id="fb-explanation" class="text-gray-600 mb-6 text-lg leading-relaxed"></p>
+                <div class="bg-gray-50 p-3 rounded mb-4 text-sm text-left border-l-4 border-green-500">
+                    <span class="font-bold text-gray-700">Respuesta correcta:</span>
+                    <p id="fb-correct-answer" class="text-gray-800 italic"></p>
+                </div>
+                <button onclick="nextQuestion()" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 rounded-lg transition">
+                    Siguiente Pregunta <i class="fa-solid fa-arrow-right ml-2"></i>
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- LOGICA JAVASCRIPT -->
+    <script>
+        // --- BASE DE DATOS DE PREGUNTAS (60 PREGUNTAS) ---
+        // Extraídas de los textos proporcionados sobre Tectónica, Wegener, Fondos oceánicos, etc.
+        const questionBank = [
+            {
+                q: "¿Quién propuso la hipótesis de la Deriva Continental en 1915?",
+                options: ["Alfred Wegener", "Frank Taylor", "Harry Hess", "Charles Darwin"],
+                correct: 0,
+                explanation: "En 1915, el meteorólogo alemán Alfred Wegener publicó su obra maestra proponiendo que los continentes estuvieron unidos en el pasado."
+            },
+            {
+                q: "¿Cómo se llamaba el supercontinente único propuesto por Wegener?",
+                options: ["Pangea", "Gondwana", "Laurasia", "Rodinia"],
+                correct: 0,
+                explanation: "Wegener sugirió que en el pasado existió un único supercontinente llamado Pangea que posteriormente se fragmentó."
+            },
+            {
+                q: "¿Qué prueba geográfica utilizó Wegener para su teoría?",
+                options: ["El encaje de las costas de Sudamérica y África", "La altura de las montañas", "La profundidad de los océanos", "El color de la arena"],
+                correct: 0,
+                explanation: "Wegener observó el ajuste casi perfecto de las líneas de costa, especialmente entre Sudamérica y África, como piezas de un puzzle."
+            },
+            {
+                q: "¿En qué año se consolidó la Teoría de la Tectónica de Placas como modelo unificado?",
+                options: ["1968", "1915", "1940", "2000"],
+                correct: 0,
+                explanation: "Hasta 1968 la geología carecía de un modelo unificado. En ese año surgió la Teoría de la Tectónica de Placas."
+            },
+            {
+                q: "¿Qué parte de la Tierra está fragmentada en placas?",
+                options: ["La Litosfera", "El Núcleo externo", "La Astenosfera", "La Mesosfera"],
+                correct: 0,
+                explanation: "La premisa de la tectónica es que la superficie terrestre (litosfera) está fragmentada en piezas rígidas llamadas placas."
+            },
+            {
+                q: "¿Cuál es el motor del movimiento de las placas tectónicas?",
+                options: ["El calor interno y corrientes de convección", "La rotación de la Tierra", "La atracción de la Luna", "El viento solar"],
+                correct: 0,
+                explanation: "El motor es el calor interno de la Tierra, que genera corrientes de convección en el manto moviendo las placas."
+            },
+            {
+                q: "¿Qué tipo de borde es la Falla de San Andrés?",
+                options: ["Transformante", "Divergente", "Convergente", "Constructivo"],
+                correct: 0,
+                explanation: "La Falla de San Andrés es un ejemplo de borde transformante (deslizamiento lateral), donde no se crea ni destruye litosfera."
+            },
+            {
+                q: "¿Qué se forma en un borde divergente continental?",
+                options: ["Un Rift", "Una Fosa", "Una Cordillera", "Un Arco de Islas"],
+                correct: 0,
+                explanation: "Cuando la divergencia ocurre en un continente, se forma una larga depresión llamada Rift, como el Gran Valle del Rift en África."
+            },
+            {
+                q: "¿Qué ocurre en las dorsales oceánicas?",
+                options: ["Se crea nueva litosfera oceánica", "Se destruye litosfera", "Chocan dos continentes", "No hay actividad volcánica"],
+                correct: 0,
+                explanation: "Las dorsales son bordes constructivos donde los magmas salen al exterior creando nueva litosfera oceánica."
+            },
+            {
+                q: "¿Qué es la subducción?",
+                options: ["El hundimiento de una placa bajo otra", "La separación de dos placas", "El deslizamiento lateral de placas", "La formación de montañas sin volcanes"],
+                correct: 0,
+                explanation: "La subducción es el proceso por el cual una placa (generalmente oceánica y más densa) se hunde bajo otra hacia el manto."
+            },
+            {
+                q: "¿Qué relieve submarino corresponde a una profunda trinchera donde se destruye corteza?",
+                options: ["Fosa Oceánica", "Dorsal Oceánica", "Llanura Abisal", "Plataforma Continental"],
+                correct: 0,
+                explanation: "Las fosas oceánicas son depresiones profundas (hasta 11000m) donde la litosfera vieja se destruye al subducir."
+            },
+            {
+                q: "¿Cuál es la edad máxima aproximada de las rocas del fondo oceánico?",
+                options: ["180 - 200 millones de años", "4000 millones de años", "5000 años", "1000 millones de años"],
+                correct: 0,
+                explanation: "El fondo oceánico es relativamente joven, no superando los 180-200 millones de años, ya que se recicla constantemente."
+            },
+            {
+                q: "¿Dónde son más gruesos los sedimentos marinos?",
+                options: ["Lejos de la dorsal", "En el eje de la dorsal", "En la plataforma continental", "En los volcanes activos"],
+                correct: 0,
+                explanation: "Los sedimentos son casi inexistentes en la dorsal (roca nueva) y aumentan su espesor a medida que nos alejamos de ella."
+            },
+            {
+                q: "¿Qué prueba paleontológica usó Wegener?",
+                options: ["Fósiles idénticos en continentes separados", "Huellas de dinosaurios en la luna", "Restos humanos antiguos", "Plantas acuáticas actuales"],
+                correct: 0,
+                explanation: "Wegener encontró fósiles del mismo organismo (como el Mesosaurus) en continentes hoy separados por océanos."
+            },
+            {
+                q: "¿Qué es el paleomagnetismo?",
+                options: ["El estudio del campo magnético grabado en rocas", "La atracción de los polos", "La electricidad estática de las piedras", "El magnetismo de los animales"],
+                correct: 0,
+                explanation: "Es el estudio del campo magnético terrestre del pasado que queda registrado en los minerales de las rocas al solidificarse."
+            },
+            {
+                q: "¿Qué demostró el patrón de bandas magnéticas del fondo oceánico?",
+                options: ["La expansión del fondo oceánico", "Que la Tierra es hueca", "Que los polos no cambian", "Que el mar siempre fue igual"],
+                correct: 0,
+                explanation: "Las bandas simétricas de polaridad normal e invertida a ambos lados de la dorsal confirman que el fondo se expande."
+            },
+            {
+                q: "¿Sobre qué capa fluida se mueven las placas litosféricas?",
+                options: ["Astenosfera (o manto sublitosférico)", "Núcleo interno", "Corteza", "Atmósfera"],
+                correct: 0,
+                explanation: "Las placas se desplazan sobre el manto sublitosférico o astenosfera, que tiene un comportamiento plástico y fluido."
+            },
+            {
+                q: "¿Qué ocurre cuando chocan dos placas continentales (obducción)?",
+                options: ["Se forman grandes cordilleras como el Himalaya", "Se crea una dorsal", "Se forma una fosa profunda", "Se crea un nuevo océano"],
+                correct: 0,
+                explanation: "Al tener densidades similares, ninguna subduce totalmente. Se pliegan y elevan formando grandes cordilleras de colisión."
+            },
+            {
+                q: "¿Qué tipo de placa es la Placa Euroasiática?",
+                options: ["Mixta (continental y oceánica)", "Solo oceánica", "Solo continental", "Plana"],
+                correct: 0,
+                explanation: "La mayoría de las grandes placas, como la Euroasiática, son mixtas, conteniendo tanto corteza continental como oceánica."
+            },
+            {
+                q: "¿Por qué Andalucía es una zona de riesgo sísmico?",
+                options: ["Por la convergencia Euroasia-África", "Por la falla de San Andrés", "Por estar cerca del polo", "Por el cambio climático"],
+                correct: 0,
+                explanation: "Andalucía se sitúa en el límite de convergencia activa entre la placa Euroasiática y la Africana, generando tensión sísmica."
+            },
+            {
+                q: "¿Qué tecnología permitió cartografiar el fondo oceánico en el siglo XX?",
+                options: ["Sonar y Radar", "Telescopio", "GPS", "Brújula"],
+                correct: 0,
+                explanation: "Con el desarrollo del sonar y el radar, se descubrió que el fondo oceánico tenía un relieve dinámico (dorsales, fosas)."
+            },
+            {
+                q: "¿Qué es un borde destructivo?",
+                options: ["Donde se destruye litosfera (convergente)", "Donde nace litosfera", "Donde no pasa nada", "Un borde costero erosionado"],
+                correct: 0,
+                explanation: "Es un límite convergente donde la litosfera subduce y se funde en el manto, destruyéndose."
+            },
+            {
+                q: "¿Qué ejemplo de dorsal menciona el texto?",
+                options: ["Dorsal Centroatlántica", "Dorsal del Pacífico", "Dorsal Índica", "Dorsal Ártica"],
+                correct: 0,
+                explanation: "El texto cita la Dorsal Centroatlántica como ejemplo de borde divergente donde se crea nueva litosfera."
+            },
+            {
+                q: "¿Qué prueba paleoclimática aportó Wegener?",
+                options: ["Tillitas glaciares en zonas hoy cálidas", "Arena de desierto en el polo", "Hielo en el ecuador actual", "Lluvia fósil"],
+                correct: 0,
+                explanation: "Wegener halló restos de glaciares (tillitas) en lugares que hoy son tropicales, sugiriendo que antes estaban cerca del polo."
+            },
+            {
+                q: "¿Cómo es la edad de las rocas en la dorsal oceánica?",
+                options: ["Muy joven (0 Ma)", "Muy antigua", "Igual que en los continentes", "Variable"],
+                correct: 0,
+                explanation: "En el eje de la dorsal la roca se acaba de formar, por lo que su edad es 0 o muy reciente."
+            },
+            {
+                q: "¿Qué ocurre en una zona de subducción Océano-Océano?",
+                options: ["Se forma un arco de islas volcánicas", "Se forma el Himalaya", "Se forma un rift", "No hay volcanes"],
+                correct: 0,
+                explanation: "La subducción entre dos placas oceánicas genera un arco de islas volcánicas (ej: Japón, Filipinas)."
+            },
+            {
+                q: "¿Qué nombre recibe el deslizamiento lateral entre placas?",
+                options: ["Borde transformante", "Subducción", "Expansión", "Colisión"],
+                correct: 0,
+                explanation: "En los bordes transformantes las placas se deslizan lateralmente produciendo fricción y terremotos."
+            },
+            {
+                q: "¿Cuál NO fue una prueba usada por Wegener?",
+                options: ["Pruebas de ADN", "Pruebas Geográficas", "Pruebas Paleontológicas", "Pruebas Geológicas"],
+                correct: 0,
+                explanation: "En 1915 no existía la tecnología de ADN. Wegener usó pruebas geográficas, geológicas, paleontológicas y paleoclimáticas."
+            },
+            {
+                q: "¿Qué significa que un borde sea 'Constructivo'?",
+                options: ["Que crea nueva litosfera", "Que construye montañas", "Que es seguro", "Que une continentes"],
+                correct: 0,
+                explanation: "Se llama constructivo porque el ascenso de magma solidifica y añade nueva roca a la corteza terrestre."
+            },
+            {
+                q: "¿Qué cordillera se formó por la colisión de India con Asia?",
+                options: ["El Himalaya", "Los Andes", "Los Alpes", "Las Rocosas"],
+                correct: 0,
+                explanation: "El Himalaya es el resultado de la convergencia continental (obducción) entre la placa India y la Euroasiática."
+            },
+            {
+                q: "¿Qué sucede con la densidad de la litosfera oceánica al enfriarse?",
+                options: ["Aumenta y tiende a hundirse", "Disminuye y flota más", "Se mantiene igual", "Desaparece"],
+                correct: 0,
+                explanation: "Al alejarse de la dorsal, la litosfera se enfría, se hace más densa y gruesa, favoreciendo la subducción."
+            },
+            {
+                q: "¿Qué son las corrientes de convección?",
+                options: ["Movimientos circulares de materiales por calor", "Corrientes de agua marina", "Vientos fuertes", "Movimientos magnéticos"],
+                correct: 0,
+                explanation: "Son movimientos de materiales en el manto: el material caliente asciende y el frío desciende, arrastrando las placas."
+            },
+            {
+                q: "¿Dónde se encuentran las rocas más antiguas del fondo oceánico?",
+                options: ["Cerca de las fosas y lejos de la dorsal", "En la dorsal", "En el centro del océano", "En la superficie"],
+                correct: 0,
+                explanation: "Las rocas más antiguas son las que más tiempo han viajado desde la dorsal y suelen estar cerca de los márgenes o fosas."
+            },
+            {
+                q: "¿Qué se descubrió sobre la polaridad magnética terrestre?",
+                options: ["Que se invierte periódicamente", "Que es estable siempre", "Que no existe en el mar", "Que depende del clima"],
+                correct: 0,
+                explanation: "El paleomagnetismo reveló que el campo magnético terrestre cambia de polaridad cada cierto tiempo (inversiones)."
+            },
+            {
+                q: "¿Qué es el 'Rift'?",
+                options: ["Una grieta central en la dorsal o continente", "Una montaña alta", "Un volcán submarino", "Una isla"],
+                correct: 0,
+                explanation: "El Rift es la depresión central o grieta por donde asciende el magma en las zonas de divergencia."
+            },
+            {
+                q: "¿Qué placa subduce bajo la Sudamericana para formar los Andes?",
+                options: ["Placa de Nazca", "Placa Africana", "Placa Pacífica", "Placa Antártica"],
+                correct: 0,
+                explanation: "La placa oceánica de Nazca subduce bajo la placa continental Sudamericana, elevando la cordillera de los Andes."
+            },
+            {
+                q: "¿Cuál es el resultado de un borde transformante?",
+                options: ["Terremotos sin vulcanismo", "Volcanes explosivos", "Creación de mar", "Formación de cordilleras"],
+                correct: 0,
+                explanation: "La fricción en fallas transformantes libera tensión en forma de terremotos, pero generalmente no hay volcanes."
+            },
+            {
+                q: "¿Quién propuso la expansión del fondo oceánico?",
+                options: ["Harry Hess", "Alfred Wegener", "Einstein", "Newton"],
+                correct: 0,
+                explanation: "Harry Hess, en los años 60, propuso que el fondo oceánico se expande desde las dorsales."
+            },
+            {
+                q: "¿Qué es la astenosfera?",
+                options: ["Una capa plástica del manto superior", "La capa más profunda", "La capa de aire", "La corteza sólida"],
+                correct: 0,
+                explanation: "La astenosfera es la zona del manto superior, debajo de la litosfera, con comportamiento plástico o dúctil."
+            },
+            {
+                q: "¿Qué fósil de reptil encontró Wegener en Sudamérica y África?",
+                options: ["Mesosaurus", "Tiranosaurio", "Mamut", "Trilobites"],
+                correct: 0,
+                explanation: "El Mesosaurus, un pequeño reptil de agua dulce, fue clave porque no podría haber cruzado el océano Atlántico."
+            },
+            {
+                q: "¿Qué evidencia geológica encontró Wegener en cadenas montañosas?",
+                options: ["Continuidad de rocas a ambos lados del océano", "Mismo color de tierra", "Mismos árboles", "Misma altura exacta"],
+                correct: 0,
+                explanation: "Cadenas montañosas (como los Apalaches y las de Escandinavia) tienen la misma edad y tipo de roca, indicando unión pasada."
+            },
+            {
+                q: "¿Cómo se llama el proceso de creación de litosfera?",
+                options: ["Acreción o expansión", "Subducción", "Erosión", "Sedimentación"],
+                correct: 0,
+                explanation: "La expansión del fondo oceánico o acreción es el proceso de generación de nueva corteza en las dorsales."
+            },
+            {
+                q: "¿Qué porcentaje del reto necesitas para aprobar?",
+                options: ["Más del 84%", "50%", "100%", "60%"],
+                correct: 0,
+                explanation: "Como indica la portada del reto, necesitas superar el 84% de aciertos para obtener el diploma."
+            },
+            {
+                q: "¿Qué prueba geométrica apoyaba la deriva continental?",
+                options: ["El encaje de plataformas continentales", "La forma redonda de la Tierra", "La alineación de planetas", "La forma de las islas"],
+                correct: 0,
+                explanation: "Bullard demostró en 1965 que el encaje es aún mejor si se consideran las plataformas continentales (a 900m de profundidad)."
+            },
+            {
+                q: "¿Qué fenómeno se asocia a todos los límites de placa?",
+                options: ["Sismicidad (Terremotos)", "Vulcanismo", "Formación de montañas", "Creación de corteza"],
+                correct: 0,
+                explanation: "Todos los límites de placa generan fricción y movimientos, produciendo terremotos, aunque no todos producen volcanes."
+            },
+            {
+                q: "¿Qué es un arco insular?",
+                options: ["Cadena de islas volcánicas por subducción", "Un puente de tierra", "Un arrecife de coral", "Una dorsal curva"],
+                correct: 0,
+                explanation: "Es una alineación curva de islas volcánicas (como Japón) formada tras la subducción de una placa oceánica bajo otra oceánica."
+            },
+            {
+                q: "¿Por qué se mueven los continentes?",
+                options: ["Porque se mueven las placas que los arrastran", "Porque flotan en el mar", "Por el viento", "Por el magnetismo"],
+                correct: 0,
+                explanation: "Los continentes están incrustados en las placas litosféricas y viajan con ellas, no se mueven por sí solos sobre el fondo."
+            },
+            {
+                q: "¿Qué longitud aproximada tienen las dorsales oceánicas?",
+                options: ["Más de 60.000 km", "100 km", "1.000 km", "Son pequeñas"],
+                correct: 0,
+                explanation: "El sistema de dorsales oceánicas es la cadena montañosa más larga del mundo, recorriendo más de 60.000 km."
+            },
+            {
+                q: "¿Qué indica una anomalía magnética positiva en el fondo marino?",
+                options: ["Magnetismo actual (normal)", "Falta de hierro", "Magnetismo invertido", "Roca sedimentaria"],
+                correct: 0,
+                explanation: "Una anomalía positiva indica que las rocas se magnetizaron con la misma polaridad que el campo actual, sumándose a este."
+            },
+            {
+                q: "¿Cuál es la placa tectónica más grande?",
+                options: ["Placa del Pacífico", "Placa de Cocos", "Placa de Juan de Fuca", "Placa Arábiga"],
+                correct: 0,
+                explanation: "La placa del Pacífico es la más extensa, cubriendo gran parte de la cuenca del océano Pacífico."
+            },
+            {
+                q: "¿Qué pasa con el grosor de la litosfera oceánica lejos de la dorsal?",
+                options: ["Aumenta por enfriamiento", "Disminuye", "Se mantiene igual", "Desaparece"],
+                correct: 0,
+                explanation: "Al enfriarse el manto litosférico, se une a la base de la corteza, engrosando la placa litosférica."
+            },
+            {
+                q: "¿Qué tipo de borde genera la Fosa de las Marianas?",
+                options: ["Convergente (Subducción)", "Divergente", "Transformante", "Pasivo"],
+                correct: 0,
+                explanation: "Es una zona de subducción donde la placa del Pacífico se hunde bajo la placa de Filipinas, creando la fosa más profunda."
+            },
+            {
+                q: "¿Qué son los puntos calientes (Hot Spots)?",
+                options: ["Penachos térmicos fijos del manto", "Lugares de mucho sol", "Zonas de fricción", "Centros de dorsales"],
+                correct: 0,
+                explanation: "Son zonas donde asciende magma de zonas profundas del manto de forma independiente a los bordes de placa (ej: Hawái)."
+            },
+            {
+                q: "¿Qué crítica principal recibió Wegener en su época?",
+                options: ["No explicó el mecanismo que movía los continentes", "Sus mapas eran malos", "No era geólogo", "Nadie le entendía"],
+                correct: 0,
+                explanation: "La principal crítica fue que no pudo explicar qué fuerza era capaz de mover masas continentales tan enormes."
+            },
+            {
+                q: "¿Qué es la 'Llanura Abisal'?",
+                options: ["Planicie submarina profunda", "La playa", "La cima de la dorsal", "El talud continental"],
+                correct: 0,
+                explanation: "Es la zona extensa y plana del fondo oceánico, situada entre el pie del talud continental y la dorsal."
+            },
+            {
+                q: "¿La litosfera se crea y destruye a la misma velocidad global?",
+                options: ["Sí, el tamaño de la Tierra es constante", "No, la Tierra crece", "No, la Tierra encoge", "Depende del año"],
+                correct: 0,
+                explanation: "Como el volumen de la Tierra no cambia, la cantidad de corteza creada en las dorsales debe igualar a la destruida en las fosas."
+            },
+            {
+                q: "¿Qué mineral es clave para el paleomagnetismo?",
+                options: ["Magnetita", "Cuarzo", "Calcita", "Feldespato"],
+                correct: 0,
+                explanation: "La magnetita es un mineral rico en hierro que se orienta como una brújula al enfriarse el magma."
+            },
+            {
+                q: "¿Qué sucede en Islandia geológicamente?",
+                options: ["La dorsal atlántica emerge en superficie", "Hay una gran fosa", "No hay volcanes", "Es un borde transformante"],
+                correct: 0,
+                explanation: "Islandia es uno de los pocos lugares donde la dorsal centroatlántica sale a la superficie, mostrando la divergencia."
+            },
+            {
+                q: "¿Qué prueba aporta la distribución de terremotos y volcanes?",
+                options: ["Que coinciden con los bordes de placa", "Que son aleatorios", "Que ocurren solo en verano", "Que están en el centro de los continentes"],
+                correct: 0,
+                explanation: "Al mapamundizar los sismos y volcanes, estos dibujan perfectamente los límites de las placas tectónicas."
+            },
+            {
+                q: "Para obtener el diploma, ¿cuántos aciertos mínimos necesitas?",
+                options: ["21 aciertos (84%)", "15 aciertos", "25 aciertos", "10 aciertos"],
+                correct: 0,
+                explanation: "El reto exige un 84%, lo que equivale a acertar al menos 21 de las 25 preguntas."
+            }
+        ];
+
+        // --- VARIABLES DE ESTADO ---
+        let currentQuestions = [];
+        let currentIndex = 0;
+        let score = 0;
+        let userName = "";
+        let timer;
+        let timeLeft = 20;
+        const totalQuestions = 25;
+        const passThreshold = 0.84;
+
+        // --- REFERENCIAS DOM ---
+        const screens = {
+            welcome: document.getElementById('screen-welcome'),
+            quiz: document.getElementById('screen-quiz'),
+            results: document.getElementById('screen-results')
+        };
+        const els = {
+            username: document.getElementById('username'),
+            displayName: document.getElementById('display-name'),
+            qCurrent: document.getElementById('q-current'),
+            qText: document.getElementById('question-text'),
+            options: document.getElementById('options-container'),
+            timerBar: document.getElementById('timer-bar'),
+            timerText: document.getElementById('timer-text'),
+            modal: document.getElementById('feedback-modal'),
+            modalTitle: document.getElementById('fb-title'),
+            modalExp: document.getElementById('fb-explanation'),
+            modalCorrect: document.getElementById('fb-correct-answer'),
+            modalIcon: document.getElementById('fb-icon')
+        };
+
+        // --- FUNCIONES DE SEGURIDAD ---
+        document.addEventListener("visibilitychange", () => {
+            if (document.hidden && !screens.quiz.classList.contains('hidden') && screens.results.classList.contains('hidden')) {
+                // Penalización por salir de la pestaña
+                handleSecurityBreach();
+            }
+        });
+
+        function handleSecurityBreach() {
+            // Si sale, cuenta como fallo automático y pasa a la siguiente o termina
+            // Para ser didáctico, simplemente forzamos el fallo de la pregunta actual si está activa
+            if(document.getElementById('feedback-modal').classList.contains('hidden')) {
+                clearInterval(timer);
+                showFeedback(false, -1, "¡Sistema Anti-copia activado! No puedes buscar información fuera de la aplicación.");
+            }
+        }
+
+        // --- INICIO DEL QUIZ ---
+        function startQuiz() {
+            const name = els.username.value.trim();
+            if (!name) {
+                alert("Por favor, introduce tu nombre para empezar.");
+                return;
+            }
+            userName = name;
+            els.displayName.textContent = userName;
+
+            // 1. Barajar banco completo y coger 25
+            const shuffledBank = [...questionBank].sort(() => 0.5 - Math.random());
+            currentQuestions = shuffledBank.slice(0, totalQuestions);
+
+            // 2. Resetear estado
+            currentIndex = 0;
+            score = 0;
+            
+            // 3. Cambiar pantalla
+            screens.welcome.classList.add('hidden');
+            screens.results.classList.add('hidden');
+            screens.quiz.classList.remove('hidden');
+            screens.quiz.classList.add('flex');
+
+            loadQuestion();
+        }
+
+        // --- CARGAR PREGUNTA ---
+        function loadQuestion() {
+            const q = currentQuestions[currentIndex];
+            els.qCurrent.textContent = currentIndex + 1;
+            els.qText.textContent = q.q;
+            
+            // Preparar opciones barajadas
+            els.options.innerHTML = '';
+            // Crear array de indices [0, 1, 2, 3] y barajar
+            const indices = [0, 1, 2, 3].sort(() => 0.5 - Math.random());
+
+            indices.forEach(i => {
+                const btn = document.createElement('button');
+                btn.className = "btn-option bg-white border-2 border-purple-200 hover:border-purple-500 text-gray-700 font-semibold py-4 px-6 rounded-xl shadow-sm text-lg text-left h-full w-full flex items-center";
+                btn.innerHTML = `<span class="bg-purple-100 text-purple-700 py-1 px-3 rounded-full mr-3 text-sm font-bold">${String.fromCharCode(65 + i)}</span> ${q.options[i]}`;
+                btn.onclick = () => checkAnswer(i);
+                els.options.appendChild(btn);
+            });
+
+            // Reset Timer
+            resetTimer();
+        }
+
+        // --- TIMER ---
+        function resetTimer() {
+            clearInterval(timer);
+            timeLeft = 20;
+            els.timerText.textContent = timeLeft + "s";
+            els.timerBar.style.transition = 'none';
+            els.timerBar.style.width = '100%';
+            
+            // Forzar reflow
+            void els.timerBar.offsetWidth;
+
+            els.timerBar.style.transition = 'width 1s linear';
+            
+            timer = setInterval(() => {
+                timeLeft--;
+                els.timerText.textContent = timeLeft + "s";
+                els.timerBar.style.width = (timeLeft / 20 * 100) + '%';
+
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    timeOut();
+                }
+            }, 1000);
+        }
+
+        function timeOut() {
+            showFeedback(false, -1, "¡Se acabó el tiempo!");
+        }
+
+        // --- VERIFICAR RESPUESTA ---
+        function checkAnswer(selectedIndex) {
+            clearInterval(timer);
+            const q = currentQuestions[currentIndex];
+            const isCorrect = (selectedIndex === q.correct);
+
+            if (isCorrect) score++;
+
+            showFeedback(isCorrect, q.correct, q.explanation);
+        }
+
+        // --- MOSTRAR FEEDBACK (MODAL) ---
+        function showFeedback(isCorrect, correctIndex, explanation) {
+            const q = currentQuestions[currentIndex];
+            
+            els.modal.classList.remove('hidden');
+            
+            if (isCorrect) {
+                els.modalIcon.innerHTML = '<i class="fa-solid fa-circle-check text-green-500"></i>';
+                els.modalTitle.textContent = "¡Correcto!";
+                els.modalTitle.className = "text-2xl font-bold mb-2 text-green-600";
+            } else {
+                els.modalIcon.innerHTML = '<i class="fa-solid fa-circle-xmark text-red-500"></i>';
+                els.modalTitle.textContent = "¡Incorrecto!";
+                els.modalTitle.className = "text-2xl font-bold mb-2 text-red-600";
+            }
+
+            els.modalExp.textContent = explanation;
+            
+            // Mostrar cuál era la correcta si falló
+            if (!isCorrect && correctIndex !== -1) {
+                els.modalCorrect.textContent = q.options[correctIndex];
+                els.modalCorrect.parentElement.classList.remove('hidden');
+            } else if (isCorrect) {
+                els.modalCorrect.parentElement.classList.add('hidden');
+            } else {
+                 // Caso timeout
+                 els.modalCorrect.textContent = q.options[q.correct];
+                 els.modalCorrect.parentElement.classList.remove('hidden');
+            }
+        }
+
+        // --- SIGUIENTE PREGUNTA ---
+        function nextQuestion() {
+            els.modal.classList.add('hidden');
+            currentIndex++;
+
+            if (currentIndex < totalQuestions) {
+                loadQuestion();
+            } else {
+                showResults();
+            }
+        }
+
+        // --- RESULTADOS ---
+        function showResults() {
+            screens.quiz.classList.add('hidden');
+            screens.quiz.classList.remove('flex');
+            screens.results.classList.remove('hidden');
+            screens.results.classList.add('flex');
+
+            const percentage = (score / totalQuestions);
+            const percentageDisplay = Math.round(percentage * 100);
+            const grade = (percentage * 10).toFixed(1);
+            
+            document.getElementById('score-text').textContent = `${score}/${totalQuestions}`;
+            document.getElementById('percentage-text').textContent = `${percentageDisplay}%`;
+            document.getElementById('grade-text').textContent = grade;
+
+            const title = document.getElementById('result-title');
+            const msg = document.getElementById('result-message');
+            const icon = document.getElementById('result-icon');
+            const btnDown = document.getElementById('btn-download');
+
+            if (percentage >= passThreshold) {
+                // APROBADO
+                icon.innerHTML = '<i class="fa-solid fa-trophy text-yellow-400"></i>';
+                title.textContent = `¡Enhorabuena, ${userName}!`;
+                title.classList.add('text-purple-600');
+                msg.textContent = "Has superado el reto con éxito. ¡Eres un experto en Tectónica!";
+                btnDown.classList.remove('hidden');
+                btnDown.classList.add('flex');
+                
+                // Fuegos artificiales
+                launchFireworks();
+            } else {
+                // SUSPENSO
+                icon.innerHTML = '<i class="fa-solid fa-face-sad-tear text-blue-400"></i>';
+                title.textContent = `¡Ánimo, ${userName}!`;
+                title.classList.add('text-gray-700');
+                msg.textContent = `Necesitas un 84% para el diploma. Has conseguido un ${percentageDisplay}%. ¡Vuelve a intentarlo!`;
+                btnDown.classList.add('hidden');
+                btnDown.classList.remove('flex');
+            }
+        }
+
+        // --- FUEGOS ARTIFICIALES ---
+        function launchFireworks() {
+            var duration = 5 * 1000;
+            var animationEnd = Date.now() + duration;
+            var defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
+
+            function random(min, max) {
+              return Math.random() * (max - min) + min;
+            }
+
+            var interval = setInterval(function() {
+              var timeLeft = animationEnd - Date.now();
+
+              if (timeLeft <= 0) {
+                return clearInterval(interval);
+              }
+
+              var particleCount = 50 * (timeLeft / duration);
+              // since particles fall down, start a bit higher than random
+              confetti(Object.assign({}, defaults, { particleCount, origin: { x: random(0.1, 0.3), y: Math.random() - 0.2 } }));
+              confetti(Object.assign({}, defaults, { particleCount, origin: { x: random(0.7, 0.9), y: Math.random() - 0.2 } }));
+            }, 250);
+        }
+
+        // --- GENERAR DIPLOMA PDF ---
+        function generateDiploma() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({
+                orientation: 'landscape',
+                unit: 'mm',
+                format: 'a4'
+            });
+
+            // Colores
+            const primaryColor = [102, 126, 234]; // Un azul/morado
+            const secondaryColor = [45, 55, 72];
+
+            // Borde
+            doc.setLineWidth(3);
+            doc.setDrawColor(...primaryColor);
+            doc.rect(10, 10, 277, 190);
+            
+            doc.setLineWidth(1);
+            doc.setDrawColor(200, 200, 200);
+            doc.rect(15, 15, 267, 180);
+
+            // Títulos
+            doc.setFont("helvetica", "bold");
+            doc.setTextColor(...primaryColor);
+            doc.setFontSize(30);
+            doc.text("DIPLOMA DE HONOR", 148.5, 40, { align: "center" });
+
+            doc.setFontSize(16);
+            doc.setTextColor(100, 100, 100);
+            doc.text("Sagrado Corazón Hermanas Carmelitas", 148.5, 55, { align: "center" });
+
+            doc.setFontSize(12);
+            doc.text("Este certificado se otorga a:", 148.5, 75, { align: "center" });
+
+            // Nombre Alumno
+            doc.setFont("times", "italic");
+            doc.setFontSize(40);
+            doc.setTextColor(...secondaryColor);
+            doc.text(userName, 148.5, 95, { align: "center" });
+
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(14);
+            doc.setTextColor(50, 50, 50);
+            doc.text("Por haber superado con éxito el repaso de:", 148.5, 115, { align: "center" });
+
+            // Contexto
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(22);
+            doc.setTextColor(...primaryColor);
+            doc.text("DINÁMICA DE LA TIERRA", 148.5, 130, { align: "center" });
+            doc.text("Y TECTÓNICA DE PLACAS", 148.5, 140, { align: "center" });
+
+            // Nota y Fecha
+            const today = new Date().toLocaleDateString('es-ES');
+            doc.setFontSize(12);
+            doc.setTextColor(100, 100, 100);
+            doc.setFont("helvetica", "normal");
+            doc.text(`Fecha: ${today}`, 50, 170);
+            doc.text(`Nota: ${(score/totalQuestions*10).toFixed(1)} / 10`, 247, 170, { align: "right" });
+
+            // Firma (simulada)
+            doc.setLineWidth(0.5);
+            doc.line(110, 175, 190, 175);
+            doc.setFontSize(10);
+            doc.text("Profesor de Biología", 148.5, 182, { align: "center" });
+
+            // Medalla gráfica (círculo simple)
+            doc.setFillColor(255, 215, 0);
+            doc.circle(250, 40, 15, 'F');
+            doc.setFontSize(10);
+            doc.setTextColor(0,0,0);
+            doc.text("ÉXITO", 250, 42, {align:"center"});
+
+            doc.save(`Diploma_Biologia_${userName.replace(/\s+/g, '_')}.pdf`);
+        }
+    </script>
+</body>
+</html>
